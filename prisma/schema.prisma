@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Kullanıcı tablosu
+model User {
+  id        Int      @id @default(autoincrement())
+  ad        String
+  email     String   @unique
+  sifre     String
+  rol       String   // 'admin' veya 'kullanici'
+  randevular Randevu[]
+  mesajlarGonderen Mesaj[] @relation("Gonderen")
+  mesajlarAlici    Mesaj[] @relation("Alici")
+  profil   Profil?
+  bildirimler Bildirim[]
+}
+
+// Kullanıcı profili
+model Profil {
+  id      Int    @id @default(autoincrement())
+  bio     String?
+  userId  Int    @unique
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Randevu tablosu
+model Randevu {
+  id         Int      @id @default(autoincrement())
+  tarih      DateTime
+  durum      String   @default("bekliyor") // bekliyor, onaylandi, iptal, tamamlandi
+  aciklama   String? // Artık kullanılmıyor, opsiyonel bırakıldı
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hizmetId   Int?     // Artık opsiyonel
+  hizmet     Hizmet?  @relation(fields: [hizmetId], references: [id])
+}
+
+// Mesaj tablosu
+model Mesaj {
+  id        Int      @id @default(autoincrement())
+  icerik    String
+  gonderenId Int
+  aliciId   Int
+  gonderen  User     @relation("Gonderen", fields: [gonderenId], references: [id], onDelete: Cascade)
+  alici     User     @relation("Alici", fields: [aliciId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+// Bildirim tablosu
+model Bildirim {
+  id        Int      @id @default(autoincrement())
+  icerik    String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+// Hizmet tablosu geri eklendi
+model Hizmet {
+  id        Int        @id @default(autoincrement())
+  ad        String
+  fiyat     Float
+  randevular Randevu[]
+}
